@@ -1,5 +1,3 @@
-# kayesoriano4.github.io
-Family Health Dashboard
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, TrendingUp, TrendingDown, Heart, Moon, Activity, User, Calendar, AlertTriangle, CheckCircle } from 'lucide-react';
