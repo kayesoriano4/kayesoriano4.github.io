@@ -6,35 +6,57 @@
   <title>Family Health Dashboard</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       margin: 0;
-      padding: 1rem;
-      background: #f4f4f4;
+      padding: 2rem;
+      background: #f5f8fa;
+      color: #333;
     }
     h1 {
       text-align: center;
       color: #2c3e50;
+      margin-bottom: 1rem;
+    }
+    .controls {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    button {
+      padding: 0.6rem 1.2rem;
+      margin: 0.3rem;
+      font-size: 1rem;
+      background: #3498db;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #2980b9;
     }
     table {
       width: 100%;
       border-collapse: collapse;
       background: white;
+      border-radius: 10px;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      overflow: hidden;
     }
     th, td {
-      padding: 12px;
+      padding: 14px;
       border: 1px solid #ddd;
       text-align: center;
     }
     th {
-      background-color: #2c3e50;
+      background-color: #34495e;
       color: white;
     }
     tr:nth-child(even) {
       background-color: #f9f9f9;
     }
     td[contenteditable="true"] {
-      background-color: #fffbe6;
+      background-color: #fffce8;
     }
     .footer {
       margin-top: 2rem;
@@ -42,15 +64,31 @@
       font-size: 0.9rem;
       color: #888;
     }
-    .controls {
-      text-align: center;
-      margin: 1rem 0;
+    .status-good {
+      color: green;
+      font-weight: bold;
     }
-    button {
-      padding: 0.5rem 1rem;
-      margin: 0.2rem;
-      font-size: 1rem;
-      cursor: pointer;
+    .status-bad {
+      color: red;
+      font-weight: bold;
+    }
+    .tooltip {
+      position: relative;
+      cursor: help;
+    }
+    .tooltip:hover::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      background: #333;
+      color: #fff;
+      padding: 5px 8px;
+      border-radius: 5px;
+      font-size: 0.75rem;
+      top: 120%;
+      left: 50%;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      z-index: 1;
     }
   </style>
 </head>
@@ -58,10 +96,10 @@
   <h1>Family Health Dashboard</h1>
 
   <div class="controls">
-    <button onclick="addRow()">Add Row</button>
-    <button onclick="saveData()">Save</button>
-    <button onclick="loadData()">Restore</button>
-    <button onclick="clearData()">Clear Saved</button>
+    <button onclick="addRow()">➕ Add Row</button>
+    <button onclick="saveData()">💾 Save</button>
+    <button onclick="loadData()">🔄 Restore</button>
+    <button onclick="clearData()">🗑️ Clear Saved</button>
   </div>
 
   <table id="healthTable">
@@ -74,6 +112,7 @@
         <th>Resting HR</th>
         <th>Recovery (%)</th>
         <th>Strain</th>
+        <th>Status</th>
       </tr>
     </thead>
     <tbody>
@@ -82,7 +121,7 @@
   </table>
 
   <div class="footer">
-    Data manually editable. Saved locally in browser.
+    Data is editable and saved locally in your browser. Cloud sync is coming soon.
   </div>
 
   <script>
@@ -94,6 +133,29 @@
 
     const tableBody = document.querySelector('#healthTable tbody');
 
+    function evaluateHealth(entry) {
+      const sleep = parseFloat(entry.sleep);
+      const hrv = parseFloat(entry.hrv);
+      const rhr = parseFloat(entry.rhr);
+      const recovery = parseFloat(entry.recovery);
+      const strain = parseFloat(entry.strain);
+
+      const sleepGood = sleep >= 7;
+      const hrvGood = hrv >= 70;
+      const rhrGood = rhr <= 60;
+      const recoveryGood = recovery >= 70;
+      const strainOk = strain <= 14;
+
+      const good = (sleepGood && hrvGood && rhrGood && recoveryGood && strainOk);
+      const tooltip = `Sleep: ${sleep} | HRV: ${hrv} | RHR: ${rhr} | Recovery: ${recovery} | Strain: ${strain}`;
+
+      return {
+        status: good ? '✅ Good' : '⚠️ Needs Attention',
+        className: good ? 'status-good' : 'status-bad',
+        tooltip
+      };
+    }
+
     function renderTable(data) {
       tableBody.innerHTML = '';
       data.forEach(entry => addRow(entry));
@@ -101,6 +163,7 @@
 
     function addRow(entry = {}) {
       const row = document.createElement('tr');
+      const { status, className, tooltip } = evaluateHealth(entry);
       row.innerHTML = `
         <td contenteditable="true">${entry.date || ''}</td>
         <td contenteditable="true">${entry.name || ''}</td>
@@ -109,6 +172,7 @@
         <td contenteditable="true">${entry.rhr || ''}</td>
         <td contenteditable="true">${entry.recovery || ''}</td>
         <td contenteditable="true">${entry.strain || ''}</td>
+        <td class="tooltip ${className}" data-tooltip="${tooltip}">${status}</td>
       `;
       tableBody.appendChild(row);
     }
@@ -129,7 +193,7 @@
         });
       });
       localStorage.setItem('healthData', JSON.stringify(saved));
-      alert('Data saved locally!');
+      alert('✅ Data saved locally!');
     }
 
     function loadData() {
@@ -146,7 +210,6 @@
       renderTable(initialData);
     }
 
-    // Load on page load
     window.onload = loadData;
   </script>
 </body>
